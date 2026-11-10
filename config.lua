@@ -1,6 +1,6 @@
 --[[═══════════════════════════════════════════════════════════════════════════
-    FearX-Hopouts — ranked street duels
-    Works standalone or on ESX / QBCore / Qbox. Maps live in config_maps.lua.
+    FearX-Hopouts — ranked street duels (open-source edition)
+    QBCore + ox_lib + oxmysql only. Maps live in config_maps.lua.
 ═══════════════════════════════════════════════════════════════════════════]]--
 
 Config = {}
@@ -8,17 +8,14 @@ Config = {}
 -- ═══════════════════════════════════════════════════════════════════════════
 --  FRAMEWORK
 --
---  Hopouts runs entirely on **fearx_bridge** and has no framework code of its
---  own. Your framework, inventory, notify system and target are picked in
---  `fearx_bridge/config.lua` (all 'auto' by default) and hopouts follows.
---
---  Stats are keyed on whatever `fearx_bridge:GetPlayerIdentifier` returns —
---  the ESX identifier, or the player's `license:` on QBCore / Qbox /
---  standalone.
+--  Uses QBCore player objects directly. Persistent stats are keyed by the
+--  character's citizenid. ox_inventory is supported automatically when running;
+--  otherwise QBCore's own PlayerData.items inventory is used.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 Config.Command = 'hopouts'
 Config.LeaveCommand = 'hopoutleave' -- forfeit the match you're in
+Config.KeyMapping = { enabled = true, key = 'F7' }
 
 -- ═══════════════════════════════════════════════════════════════════════════
 --  BRANDING — logos, images and colours
@@ -43,8 +40,8 @@ Config.UI = {
     -- Rank badge path. %s is replaced with the tier's `name` below.
     rankBadge = 'img/rank-%s.png',
     -- Where item / weapon pictures are read from (loadout, store, match HUD).
-    -- 'auto' = use whatever inventory fearx_bridge detected, from itemImages
-    -- below. Or set a full nui:// path with %s for the item name to force one.
+    -- 'auto' = detect ox_inventory or QBCore's item-image path. Or set a full
+    -- nui:// path with %s for the item name to force one.
     itemImage = 'auto',
     -- lower · upper · keep  — ox_inventory images are almost always lower-case.
     itemImageCase = 'lower',
@@ -105,6 +102,7 @@ Config.Pages = {
 Config.LobbySpot = vector4(-738.25, 259.47, 135.73, 190.60)
 Config.ExitSpot = vector4(-3809.38, -2182.99, 2293.04, 359.96) -- where closing hopouts drops you (nil = return to where you opened it)
 Config.LobbyFadeMs = 400
+Config.RoutingBucketBase = 10000 -- each match gets an isolated instance
 Config.MaxParty = 5             -- party slots in the lobby
 Config.MaxQueueSize = 3         -- biggest team that can queue (1v1 … 3v3)
 Config.PartyInviteCooldown = 10 -- seconds between party invites (per inviter, regardless of target)
@@ -145,14 +143,11 @@ Config.EndScreenMs = 5000
 Config.RoundArmor = 100
 
 Config.Match = {
-    -- Stash the player's inventory in the database and hand it back when the
-    -- match ends, so nobody brings their own gear in. Uses whatever inventory
-    -- fearx_bridge detected; turn it off to leave inventories alone — match
-    -- weapons are still given natively either way.
+    -- Back up the player's complete QBCore/ox_inventory in fx_hopouts_inv and
+    -- restore it after the match. Backups also restore after reconnect/restart.
+    -- Turn off only if your server handles match inventories externally.
     clearInventory = true,
-    -- Block the inventory UI for the duration of the match. Every popular
-    -- inventory is handled in client/compat.lua — add yours to the list there
-    -- if it needs more than the standard invBusy / inv_busy flags.
+    -- Block QBCore/ox_inventory UI for the duration of the match.
     lockInventory = true,
     -- Give match weapons natively (recommended: this is what makes every
     -- player's kit identical).
@@ -166,19 +161,9 @@ Config.Match = {
     -- Hand the loadout back if an inventory's weapon guard strips it mid-round.
     -- Costs one HasPedGotWeapon check per weapon twice a second.
     loadoutWatchdog = true,
-    -- Revive between rounds through whatever ambulance script fearx_bridge
-    -- detected, instead of resurrecting the ped outright. Leave this on: some
-    -- ambulance scripts (ak47, wasabi v2) kick players who come back to life
-    -- without going through their revive. With no ambulance script running,
-    -- hopouts resurrects directly either way.
+    -- Use qb-ambulancejob's revive event when available, then reset its death
+    -- flags. A native resurrect is used when no supported ambulance is running.
     useAmbulanceRevive = true
-}
-
-Config.DevMode = false -- queue alone to instantly fight a practice bot (no ELO, stats or rewards)
-Config.DevBot = {
-    model = 'g_m_m_chigoon_01',
-    weapon = 'WEAPON_PISTOL',
-    accuracy = 30
 }
 
 -- Match weapons are given natively (never as inventory items) with unlimited ammo.
@@ -405,8 +390,7 @@ Config.Store = {
 Config.Leaderboard = {
     limit = 25,        -- rows fetched
     showGang = true,   -- the "Gang" column
-    -- Where that column's text comes from: 'gang' (QB/Qbox gang, ESX job),
-    -- 'job' or 'none'.
+    -- Where that column's text comes from: QBCore 'gang', 'job' or 'none'.
     gangSource = 'gang',
     showJackpot = true,
     showMonthly = true
