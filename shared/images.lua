@@ -25,12 +25,6 @@ local function fromBridge()
         local name = Bridge.InventoryName()
         if type(name) == 'string' and name ~= '' then return name end
     end
-    if Bridge and Bridge.GetInventory then
-        local name = Bridge.GetInventory()
-        if type(name) == 'string' and name ~= '' then return name end
-    end
-    local ok, name = pcall(function() return exports.fearx_bridge:GetInventory() end)
-    if ok and type(name) == 'string' and name ~= '' then return name end
     return nil
 end
 

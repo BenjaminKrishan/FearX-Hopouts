@@ -1,46 +1,38 @@
---[[
-    FearX-Hopouts — fearx_bridge adapter (client)
-
-    Only two things are needed client-side: "is my character loaded", and a
-    logout hook so the lobby closes when someone switches character.
-    fearx_bridge has no logout hook, so the raw framework events are listened
-    for below — they are only event names, and an event whose framework isn't
-    running simply never fires.
-]]--
-
-local FXB = exports.fearx_bridge
-
+-- QBCore client adapter. No external bridge resource is required.
 Bridge = {}
 
---- Has the player finished spawning in as a character?
-function Bridge.IsLoaded()
-    local ok, loaded = pcall(function() return FXB:IsPlayerLoaded() end)
-    return not ok or loaded ~= false
-end
+local QBCore = exports['qb-core']:GetCoreObject()
+local loaded = false
 
-function Bridge.GetInventory()
-    local ok, name = pcall(function() return FXB:GetInventory() end)
-    if ok and type(name) == 'string' and name ~= '' then return name end
-    return 'none'
+function Bridge.IsLoaded()
+    return loaded
 end
 
 function Bridge.Notify(message, kind, title)
-    local map = { inform = 'info', success = 'success', error = 'error' }
-    pcall(function()
-        FXB:Notify(title or 'Hopouts', message or '', map[kind or 'inform'] or 'info', 6000)
-    end)
+    lib.notify({
+        title = title or 'Hopouts',
+        description = message or '',
+        type = ({ inform = 'info', success = 'success', error = 'error' })[kind or 'inform'] or 'info',
+        duration = 5000
+    })
 end
-
--- ── Logout hook ──────────────────────────────────────────────────────────
 
 local logoutHandlers = {}
-
-function Bridge.OnLogout(fn) logoutHandlers[#logoutHandlers + 1] = fn end
-
-local function fireLogout()
-    for i = 1, #logoutHandlers do pcall(logoutHandlers[i]) end
+function Bridge.OnLogout(fn)
+    logoutHandlers[#logoutHandlers + 1] = fn
 end
 
-RegisterNetEvent('esx:onPlayerLogout', fireLogout)
-RegisterNetEvent('QBCore:Client:OnPlayerUnload', fireLogout)
-RegisterNetEvent('qbx_core:client:playerLoggedOut', fireLogout)
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    loaded = true
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    loaded = false
+    for i = 1, #logoutHandlers do
+        pcall(logoutHandlers[i])
+    end
+end)
+
+CreateThread(function()
+    if LocalPlayer.state.isLoggedIn then loaded = true end
+end)

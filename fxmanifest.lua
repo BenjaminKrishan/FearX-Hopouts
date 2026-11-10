@@ -2,20 +2,10 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-author 'FearX'
-description 'FearX-Hopouts — ranked street duels (runs on fearx_bridge: ESX / QBCore / Qbox / standalone)'
-version '1.1.2'
-
-escrow_ignore {
-    'config.lua',
-    'config_maps.lua',
-    'sv_config.lua',
-    'bridge/*.lua',
-    'client/compat.lua',
-    'client/radio.lua',
-    'shared/images.lua',
-    'sql/*.sql'
-}
+name 'FearX-Hopouts'
+author 'FearX / open-source contributors'
+description 'QBCore ranked PvP hopouts with parties, rounds, storm, ranks and rewards'
+version '2.0.0'
 
 shared_scripts {
     '@ox_lib/init.lua',
@@ -39,6 +29,7 @@ server_scripts {
     'server/radio.lua',
     'server/loadout.lua',
     'server/squad.lua',
+    'server/discord.lua',
     'server/main.lua'
 }
 
@@ -55,9 +46,7 @@ files {
 }
 
 dependencies {
-    'fearx_bridge',
+    'qb-core',
     'ox_lib',
     'oxmysql'
 }
-
-dependency '/assetpacks'
