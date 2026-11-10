@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="lobby" class="hidden">
+        <div class="scrim-top"></div>
+        <div class="scrim-left"></div>
+        <div class="scrim-right"></div>
+        <div class="scrim-bottom"></div>
+        <div class="scrim-full"></div>
+
+        <div class="topnav">
+            <div class="brand">
+                <img id="brand-logo" src="img/fearx-watermark.png" alt="">
+                <div class="brand-text">
+                    <span class="brand-title" id="brand-title">HOPOUTS</span>
+                    <span class="brand-sub" id="brand-sub">League</span>
+                </div>
+            </div>
+            <div class="nav-tabs">
+                <div class="nav-tab" data-page="queue">Queue</div>
+                <div class="nav-tab" data-page="loadout">Loadout</div>
+                <div class="nav-tab" data-page="career">Career</div>
+                <div class="nav-tab" data-page="lb">Leaderboard</div>
+                <div class="nav-tab" data-page="ranks">Ranks</div>
+                <div class="nav-tab" data-page="store">Store</div>
+            </div>
+            <div class="topnav-right">
+                <div class="esc-hint" id="btn-close"><span>Exit</span><span class="esc-key">ESC</span></div>
+            </div>
+        </div>
+
+        <div id="page-queue" class="page">
+            <div class="q-head">
+                <div class="q-chip">Lobby</div>
+                <div class="q-title">TEAM <span id="q-count">1/5</span></div>
+                <div class="q-sub" id="q-sub">Party up to queue together!</div>
+                <div id="btn-party-leave" class="party-leave hidden"><i class="fa-solid fa-right-from-bracket"></i>Leave Party</div>
+            </div>
+
+            <div class="slots" id="slots"></div>
+
+            <div class="friends" id="friends-panel">
+                <div class="fr-head">
+                    <div class="fr-ico"><i class="fa-solid fa-user-group"></i></div>
+                    <div class="fr-meta">
+                        <span class="fr-title">FRIENDS</span>
+                        <span class="fr-sub">Add friends by ID, accept requests, invite them in.</span>
+                    </div>
+                </div>
+                <div class="fr-tabs">
+                    <div class="fr-tab active" data-fr="friends">Friends<span id="fr-count" class="fr-badge hidden">0</span></div>
+                    <div class="fr-tab" data-fr="requests">Requests<span id="req-count" class="fr-badge hidden">0</span></div>
+                    <div class="fr-tab" data-fr="add">Add</div>
+                </div>
+
+                <div id="fr-pane-friends" class="fr-pane">
+                    <div id="party-invite" class="party-invite hidden">
+                        <div class="pi-text"><i class="fa-solid fa-crown"></i><span id="pi-name"></span>&nbsp;invited you to their party</div>
+                        <div class="pi-actions">
+                            <div id="pi-accept" class="pi-btn accept">Accept</div>
+                            <div id="pi-decline" class="pi-btn">Decline</div>
+                        </div>
+                    </div>
+                    <div id="fr-list" class="fr-list hs-scroll"></div>
+                </div>
+
+                <div id="fr-pane-requests" class="fr-pane hidden">
+                    <div id="req-list" class="fr-list hs-scroll"></div>
+                </div>
+
+                <div id="fr-pane-add" class="fr-pane hidden">
+                    <div class="fr-add-label">Player server ID</div>
+                    <div class="fr-add-row">
+                        <input id="fr-add-input" type="number" min="1" placeholder="e.g. 23" autocomplete="off">
+                        <div id="fr-add-btn" class="fr-add-btn"><i class="fa-solid fa-paper-plane"></i>Send</div>
+                    </div>
+                    <div id="fr-add-status" class="fr-add-status hidden"></div>
+                </div>
+            </div>
+
+            <div class="launch">
+                <div class="launch-row">
+                    <span class="launch-label">Squad</span>
+                    <span class="launch-val" id="launch-squad">Solo</span>
+                </div>
+                <div class="launch-row">
+                    <span class="launch-label">Mode</span>
+                    <span class="launch-val" id="launch-mode">Hop Outs</span>
+                </div>
+                <div class="launch-row" id="launch-elo-row">
+                    <span class="launch-label">Rating</span>
+                    <span class="launch-val" id="launch-elo">1000</span>
+                </div>
+                <div class="launch-row" id="launch-credits-row">
+                    <span class="launch-label" id="launch-credits-label">Credits</span>
+                    <span class="launch-val credits"><i class="fa-solid fa-coins"></i><span id="launch-credits">0</span></span>
+                </div>
+                <div id="btn-start" class="btn-start"><i class="fa-solid fa-play"></i><span id="btn-start-label">Start</span></div>
+            </div>
+
+            <div class="chat-hint"><span class="ch-tag">Game</span><span>Press T to type in chat...</span></div>
+        </div>
+
+        <div id="page-ranks" class="page hidden">
+            <div class="rk-head">
+                <div class="m-title">RANKS</div>
+                <div class="m-sub">Win matches to earn rank points — higher tiers risk more on a loss.</div>
+            </div>
+            <div class="ranks-grid" id="ranks-grid"></div>
+        </div>
+
+        <div id="page-lb" class="page hidden">
+            <div class="lb-toprow">
+                <div class="lb-title-block">
+                    <div class="m-title sm">LEADERBOARD</div>
+                    <div class="m-sub">Browse the top hopouts players on the server.</div>
+                </div>
+                <div class="search" id="search-wrap">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="search" placeholder="Search players...">
+                </div>
+            </div>
+
+            <div class="cards-row" id="lb-cards">
+                <div class="info-card players-card">
+                    <div class="pc-num" id="total-players">0</div>
+                    <div class="pc-desc">Unique players have battled their way onto the ranked leaderboards this season.</div>
+                </div>
+                <div class="info-card jackpot-card" id="jackpot-card">
+                    <div class="jc-chip" id="jackpot-label">Jackpot</div>
+                    <div class="jc-amount" id="jackpot-amount">$ TBA</div>
+                    <div class="jc-desc" id="jackpot-desc"></div>
+                    <div class="jc-ico"><img id="jackpot-icon" src="img/jackpot.png" alt=""></div>
+                </div>
+                <div class="info-card monthly-card" id="monthly-card">
+                    <div class="mc-trophy"><img id="monthly-trophy" src="img/trophy.png" alt=""></div>
+                    <div class="mc-body">
+                        <div class="mc-title" id="monthly-title">COMPETE MONTHLY</div>
+                        <div class="mc-desc" id="monthly-desc"></div>
+                        <div class="mc-stats" id="my-strip"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-card" id="t-hopouts">
+                <div class="tc-head">Information</div>
+                <div class="t-cols" id="t-cols">
+                    <span data-k="rank">Rank</span><span data-k="name">Name</span><span data-k="gang">Gang</span>
+                    <span data-k="kills">Kills</span><span data-k="deaths">Deaths</span><span data-k="kd">K/D</span>
+                    <span data-k="wins">Wins</span><span data-k="losses">Losses</span><span data-k="hs">HS%</span>
+                    <span data-k="playtime">Playtime</span><span data-k="rating">ELO</span>
+                </div>
+                <div id="t-rows" class="t-rows hs-scroll"></div>
+            </div>
+        </div>
+
+        <div id="page-career" class="page hidden">
+            <div class="lb-toprow">
+                <div class="lb-title-block">
+                    <div class="m-title sm">CAREER</div>
+                    <div class="m-sub">Your lifetime hopouts record.</div>
+                </div>
+            </div>
+            <div class="cards-row">
+                <div class="info-card ident-card">
+                    <div class="ident-pfp" id="c-avatar"><i class="fa-solid fa-user"></i></div>
+                    <div class="ident-meta">
+                        <div class="ident-name" id="c-name">—</div>
+                        <div class="ident-bar"><div class="ident-fill" id="c-fill"></div></div>
+                        <div class="ident-sub"><span id="c-elo-part"><span id="c-rating">0</span> ELO<span class="sep">·</span></span><span id="c-rank">unranked</span></div>
+                    </div>
+                </div>
+                <div class="info-card hstat-card" id="c-head"></div>
+            </div>
+            <div class="tile-grid" id="c-tiles"></div>
+        </div>
+
+        <div id="page-loadout" class="page hidden">
+            <div class="lb-toprow">
+                <div class="lb-title-block">
+                    <div class="m-title sm">LOADOUT</div>
+                    <div class="m-sub" id="lo-sub">Spend hopout credits to unlock guns — equipped weapons are what you take into a match.</div>
+                </div>
+                <div class="pg-toggle" id="lo-cats"></div>
+                <div class="credits-pill" id="lo-balance">
+                    <i class="fa-solid fa-coins"></i>
+                    <span id="lo-credits">0</span>
+                    <span class="credits-label" id="lo-credits-label">Hopout Credits</span>
+                </div>
+            </div>
+            <div class="lo-kit" id="lo-kit"></div>
+            <div class="pick-grid hs-scroll" id="lo-grid"></div>
+            <div class="pane-empty hidden" id="lo-empty"><i class="fa-solid fa-gun"></i><span>No weapons in this category.</span></div>
+        </div>
+
+        <div id="page-store" class="page hidden">
+            <div class="lb-toprow">
+                <div class="lb-title-block">
+                    <div class="m-title sm">STORE</div>
+                    <div class="m-sub" id="cs-sub">Spend hopout credits earned in matches.</div>
+                </div>
+                <div class="pg-toggle" id="cs-cats"></div>
+                <div class="credits-pill" id="cs-balance">
+                    <i class="fa-solid fa-coins"></i>
+                    <span id="cs-credits">0</span>
+                    <span class="credits-label" id="cs-credits-label">Hopout Credits</span>
+                </div>
+            </div>
+            <div class="pick-grid hs-scroll" id="cs-grid"></div>
+            <div class="pane-empty hidden" id="cs-empty"><i class="fa-solid fa-store-slash"></i><span>Nothing in the store yet.</span></div>
+        </div>
+    </div>
+
+    <div id="squad" class="hidden">
+        <div class="sq-tag">Squad</div>
+        <div id="sq-list"></div>
+    </div>
+
+    <div id="mhud" class="hidden">
+        <div class="score red"><span id="score-1">0</span></div>
+        <div class="mid">
+            <div id="mid-timer" class="mid-timer">5:00</div>
+            <div id="mid-round" class="mid-round">ROUND 1</div>
+        </div>
+        <div class="score blue"><span id="score-2">0</span></div>
+    </div>
+
+    <div id="count" class="hidden"></div>
+
+    <div id="banner" class="hidden"></div>
+
+    <div id="oob" class="hidden">
+        <div class="oob-title">RETURN TO THE ZONE!</div>
+        <div id="oob-sub" class="oob-sub"></div>
+    </div>
+
+    <div id="loadout" class="hidden">
+        <div class="lo-tag">Loadout</div>
+        <div class="lo-card" data-lo="primary">
+            <div class="lo-head"><span class="lo-role">Primary Weapon</span><span class="lo-key">1</span></div>
+            <img class="lo-img" data-lo-img alt="">
+            <div class="lo-name" data-lo-name></div>
+            <div class="lo-kind" data-lo-kind></div>
+        </div>
+        <div class="lo-card" data-lo="secondary">
+            <div class="lo-head"><span class="lo-role">Secondary Weapon</span><span class="lo-key">2</span></div>
+            <img class="lo-img" data-lo-img alt="">
+            <div class="lo-name" data-lo-name></div>
+            <div class="lo-kind" data-lo-kind></div>
+        </div>
+        <div class="lo-card" data-lo="equipment">
+            <div class="lo-head"><span class="lo-role">Equipment</span><span class="lo-key">3</span></div>
+            <img class="lo-img" data-lo-img alt="">
+            <div class="lo-name" data-lo-name>None</div>
+            <div class="lo-kind" data-lo-kind></div>
+        </div>
+    </div>
+
+    <div id="end" class="hidden">
+        <div class="end-scrim"></div>
+        <div class="end-body">
+            <div id="end-title" class="end-title">VICTORY</div>
+            <div id="end-score" class="end-score">2 — 0</div>
+            <div class="end-row" id="end-rating"></div>
+            <div class="end-row dim" id="end-reward"></div>
+        </div>
+    </div>
+
+    <div id="ready" class="hidden">
+        <div class="rdy-scrim"></div>
+        <div class="rdy-frame">
+            <div class="rdy-panel">
+                <div class="rdy-head">
+                    <div class="rdy-title">MATCH FOUND</div>
+                    <div class="rdy-sub" id="rdy-mode">1v1</div>
+                </div>
+
+                <div class="rdy-rail"><div class="rdy-fill" id="rdy-fill"></div></div>
+
+                <div class="rdy-teams">
+                    <div class="rdy-side">
+                        <div class="rdy-side-label">Your Team</div>
+                        <div class="rdy-list" id="rdy-mine"></div>
+                    </div>
+                    <div class="rdy-vs">VS</div>
+                    <div class="rdy-side">
+                        <div class="rdy-side-label">Opponents</div>
+                        <div class="rdy-list" id="rdy-theirs"></div>
+                    </div>
+                </div>
+
+                <div class="rdy-foot">
+                    <button class="rdy-btn decline" id="rdy-decline" type="button">Decline</button>
+                    <button class="rdy-btn accept" id="rdy-accept" type="button">Accept <span id="rdy-timer">25</span></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
