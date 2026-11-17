@@ -9,8 +9,7 @@ Config = {}
 --  FRAMEWORK
 --
 --  Uses QBCore player objects directly. Persistent stats are keyed by the
---  character's citizenid. ox_inventory is supported automatically when running;
---  otherwise QBCore's own PlayerData.items inventory is used.
+--  character's citizenid. Hopouts does not read, clear, or restore player inventory.
 -- ═══════════════════════════════════════════════════════════════════════════
 
 Config.Command = 'hopouts'
@@ -39,14 +38,11 @@ Config.UI = {
     trophyBronze = 'img/trophy-bronze.png',
     -- Rank badge path. %s is replaced with the tier's `name` below.
     rankBadge = 'img/rank-%s.png',
-    -- Where item / weapon pictures are read from (loadout, store, match HUD).
-    -- 'auto' = detect ox_inventory or QBCore's item-image path. Or set a full
-    -- nui:// path with %s for the item name to force one.
+    -- Optional weapon preview image path for loadout UI (not inventory access).
+    -- Use 'auto' for the standard QBCore image path, or provide a nui:// URL with %s.
     itemImage = 'auto',
-    -- lower · upper · keep  — ox_inventory images are almost always lower-case.
-    itemImageCase = 'lower',
-    -- Folder each inventory keeps its item pictures in. Edit a path if yours
-    -- moved, or add a new resource name if you run something not listed.
+    itemImageCase = 'lower', -- lower · upper · keep
+    -- Image URLs are cosmetic only; Hopouts never queries inventory resources.
     itemImages = {
         ['ox_inventory'] = 'nui://ox_inventory/web/images/%s.png',
         ['qb-inventory'] = 'nui://qb-inventory/html/images/%s.png',
@@ -143,14 +139,7 @@ Config.EndScreenMs = 5000
 Config.RoundArmor = 100
 
 Config.Match = {
-    -- Back up the player's complete QBCore/ox_inventory in fx_hopouts_inv and
-    -- restore it after the match. Backups also restore after reconnect/restart.
-    -- Turn off only if your server handles match inventories externally.
-    clearInventory = true,
-    -- Block QBCore/ox_inventory UI for the duration of the match.
-    lockInventory = true,
-    -- Give match weapons natively (recommended: this is what makes every
-    -- player's kit identical).
+    -- Give match weapons natively; the match kit comes from Config.LoadoutShop.
     nativeWeapons = true,
     unlimitedAmmo = true,
     ammo = {
@@ -158,7 +147,7 @@ Config.Match = {
         secondary = 60,
         equipment = 1
     },
-    -- Hand the loadout back if an inventory's weapon guard strips it mid-round.
+    -- Re-grant match weapons if another resource removes them mid-round.
     -- Costs one HasPedGotWeapon check per weapon twice a second.
     loadoutWatchdog = true,
     -- Use qb-ambulancejob's revive event when available, then reset its death
@@ -166,12 +155,11 @@ Config.Match = {
     useAmbulanceRevive = true
 }
 
--- Match weapons are given natively (never as inventory items) with unlimited ammo.
+-- Match weapons are given as native ped weapons with unlimited ammo.
 -- role: primary (key 1), secondary (key 2), equipment (key 3 — cycles if several)
 --
--- Everyone gets the identical kit, so these are picked for feel rather than
--- power. Swap in your own server weapons here; `img` is optional and defaults
--- to the ox_inventory image for that weapon name.
+-- Match weapons come from each player's equipped Hopouts loadout. `img` is
+-- optional and defaults to the configured weapon image path.
 Config.Loadout = {
     { name = 'WEAPON_CARBINERIFLE', role = 'primary', label = 'Carbine Rifle', kind = 'Assault Rifle', ammo = 250 },
     { name = 'WEAPON_PISTOL', role = 'secondary', label = 'Pistol', kind = 'Handgun', ammo = 100 },
@@ -329,7 +317,6 @@ Config.WinStreaks = {
 --  STORE — spends hopout credits only
 --
 --  item.type:
---    'item'    give an inventory item          → item, count, metadata
 --    'money'   pay out cash                    → account ('cash'/'bank'), amount
 --    'event'   fire a server event             → event, args (source is prepended)
 --    'command' run a server console command    → command ("%s" = server id, "%n" = name)
@@ -341,32 +328,8 @@ Config.WinStreaks = {
 Config.Store = {
     enabled = true,
     -- Category order in the store. Anything not listed lands in its own tab.
-    categories = { 'weapons', 'gear', 'cash' },
+    categories = { 'cash' },
     items = {
-        {
-            id = 'armour', label = 'Body Armour', category = 'gear', price = 40,
-            rarity = 'rare', type = 'item', item = 'armour', count = 1
-        },
-        {
-            id = 'medkit', label = 'Medkit', category = 'gear', price = 60,
-            rarity = 'rare', type = 'item', item = 'medikit', count = 1
-        },
-        {
-            id = 'bandage', label = 'Bandage x5', category = 'gear', price = 20,
-            rarity = 'neutral', type = 'item', item = 'bandage', count = 5
-        },
-        {
-            id = 'pistol', label = 'Pistol', category = 'weapons', price = 350,
-            rarity = 'epic', type = 'item', item = 'WEAPON_PISTOL', count = 1, featured = true
-        },
-        {
-            id = 'smg', label = 'SMG', category = 'weapons', price = 900,
-            rarity = 'legendary', type = 'item', item = 'WEAPON_SMG', count = 1
-        },
-        {
-            id = 'ammo', label = 'Pistol Ammo x50', category = 'weapons', price = 45,
-            rarity = 'neutral', type = 'item', item = 'ammo-9', count = 50
-        },
         {
             id = 'payout-small', label = '$25,000', category = 'cash', price = 250,
             rarity = 'exotic', type = 'money', account = 'cash', amount = 25000

@@ -13,10 +13,10 @@ A complete, editable FiveM PvP hopouts resource for **QBCore**, **ox_lib**, and 
 - Persistent ELO, ranks, wins/losses, K/D, headshots, playtime, and win streaks
 - Career and leaderboard pages
 - Unlockable primary, secondary, and melee loadouts
-- Credit store supporting QBCore items, money, custom events, and commands
+- Credit store supporting cash rewards, custom events, and commands
 - Optional pma-voice/saltychat/mumble radio integration
 - Squad health/armor HUD and teammate blips
-- Inventory backup before a match and restoration afterwards, on reconnect, and after a resource restart
+- Native match loadouts; player inventory is not cleared or backed up by this resource
 - Server-side validation for queue actions, purchases, deaths, match IDs, rounds, and killers
 - Existing FearX NUI, maps, images, and configuration retained
 
@@ -27,7 +27,6 @@ A complete, editable FiveM PvP hopouts resource for **QBCore**, **ox_lib**, and 
 - [`ox_lib`](https://github.com/overextended/ox_lib)
 - [`oxmysql`](https://github.com/overextended/oxmysql)
 - MySQL/MariaDB configured through oxmysql
-- Optional: `ox_inventory` (automatically detected) or QBCore's default item inventory
 - Optional: `qb-ambulancejob`, `pma-voice`
 
 ## Installation
@@ -53,7 +52,6 @@ A complete, editable FiveM PvP hopouts resource for **QBCore**, **ox_lib**, and 
    ensure oxmysql
    ensure ox_lib
    ensure qb-core
-   ensure ox_inventory # only if your server uses it
    ensure FearX-Hopouts
    ```
 
@@ -66,23 +64,16 @@ A complete, editable FiveM PvP hopouts resource for **QBCore**, **ox_lib**, and 
 | `/hopouts` or `F7` | Open/close the lobby |
 | `/hopoutleave` | Forfeit an active match, or close the lobby |
 
-## Inventory safety
+## Match loadouts
 
-With `Config.Match.clearInventory = true`, the complete inventory is serialized into `fx_hopouts_inv` **before** it is cleared. The row is deleted only after a successful restore.
+Hopouts does not clear, stash, or restore player inventory. Match weapons are granted natively from each player's equipped Hopouts loadout, and the match cleanup removes those native match weapons. The store is limited to cash rewards and optional server event/command integrations; this resource does not call an inventory resource.
 
-- `ox_inventory`: item names, counts, metadata, and slots are retained.
-- QBCore inventory: the complete slot-based `PlayerData.items` table is retained.
-- A failed restore keeps the database backup for another attempt.
-- An older backup is never overwritten by a new match.
-- Players who disconnect receive their backup after their next character load.
-
-**Back up your database before the first installation and test inventory restoration with disposable items.** Inventory behavior can be changed by other server resources, so a staging-server test is strongly recommended.
+When upgrading from a version that used `fx_hopouts_inv`, check that legacy table and manually recover any outstanding backup rows before deploying this change. The table is no longer read or updated by Hopouts; `sql/uninstall.sql` retains a drop statement for that legacy table.
 
 ## Configuration notes
 
 - `Config.ReadyCheck.enabled = false` starts paired matches immediately.
 - `Config.Ranks.enabled = false` keeps stats/rewards but disables rating changes and rank UI.
-- `Config.Match.clearInventory = false` disables the backup/clear lifecycle; match weapons are still native.
 - `Config.Match.unlimitedAmmo = true` is recommended for PvP rounds.
 - Weapon unlocks are stored as JSON in `fx_hopouts_stats`; starter weapons are always repaired into the owned/equipped list.
 - Set `Config.Debug = true` while testing for additional diagnostics.
@@ -106,14 +97,14 @@ Before a production PvP launch, test:
 
 1. Solo queue, party queue, accept/decline/timeout, and cancelling the queue.
 2. A full match, repeated rounds, timeout draw, disconnect, and `/hopoutleave`.
-3. Inventory items, weapon metadata, cash rewards, and reconnect during a match.
-4. Loadout purchase/equip and every enabled store delivery type.
+3. Cash rewards and reconnecting during a match; confirm your normal player inventory remains untouched.
+4. Loadout purchase/equip and every enabled cash/event/command store delivery type.
 5. Simultaneous matches to verify routing buckets, radios, vehicles, and storm zones do not overlap.
 6. Your ambulance/death resource and any anti-cheat rules for native match weapons/revives.
 
 ## Source layout
 
-- `bridge/`: small QBCore-only adapters and inventory persistence
+- `bridge/`: small QBCore-only player, money, and notification adapters
 - `client/`: lobby, NUI, combat, storm, radio, and squad logic
 - `server/`: authoritative matchmaking, matches, stats, purchases, and squad replication
 - `config.lua`, `config_maps.lua`, `sv_config.lua`: editable configuration

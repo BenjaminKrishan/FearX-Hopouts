@@ -30,10 +30,3 @@ CREATE TABLE IF NOT EXISTS `fx_hopouts_friends` (
     UNIQUE KEY `pair` (`a`, `b`),
     KEY `b` (`b`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE TABLE IF NOT EXISTS `fx_hopouts_inv` (
-    `identifier` VARCHAR(60) NOT NULL,
-    `items` LONGTEXT NOT NULL,
-    `created` INT UNSIGNED NOT NULL DEFAULT 0,
-    PRIMARY KEY (`identifier`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -64,8 +64,6 @@ local function restoreWorld()
     deleteVehicles()
     Squad.Clear()
     Radio.Leave()
-    Compat.Inventory.lock(false)
-    Compat.Inventory.suspendWeaponGuard(false)
     local ped = PlayerPedId()
     FreezeEntityPosition(ped, false)
     SetEntityInvincible(ped, false)
@@ -122,7 +120,6 @@ local function openLobby()
     FreezeEntityPosition(ped, true)
     SetEntityInvincible(ped, true)
     clearPedWeapons()
-    Compat.Inventory.lock(true)
     setupLobbyCamera()
     screen = 'lobby'
     HopClient.lobbyOpen = true
@@ -245,8 +242,6 @@ RegisterNetEvent('fx_hopouts:client:matchStart', function(data)
     HopClient.lobbyOpen, inReady = false, false
     SetNuiFocus(false, false)
     if lobbyCam then RenderScriptCams(false, true, 250, true, true); DestroyCam(lobbyCam, false); lobbyCam = nil end
-    Compat.Inventory.lock(true)
-    Compat.Inventory.suspendWeaponGuard(true)
     Radio.Join(Config.Radio.baseChannel + data.id)
     SendNUIMessage({ action = 'readyDone' })
     SendNUIMessage({ action = 'matchStart', data = data })
@@ -367,7 +362,7 @@ CreateThread(function()
     end
 end)
 
--- Weapon hotkeys and the inventory anti-strip watchdog.
+-- Weapon hotkeys and a match-weapon watchdog.
 CreateThread(function()
     while true do
         if HopClient.matchId then
@@ -408,8 +403,6 @@ AddEventHandler('onResourceStop', function(resource)
     end
     deleteVehicles()
     Squad.Clear()
-    Compat.Inventory.lock(false)
-    Compat.Inventory.suspendWeaponGuard(false)
     FreezeEntityPosition(PlayerPedId(), false)
     SetEntityInvincible(PlayerPedId(), false)
     SetPedRelationshipGroupHash(PlayerPedId(), joaat('PLAYER'))
