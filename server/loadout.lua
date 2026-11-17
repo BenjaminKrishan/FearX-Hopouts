@@ -146,10 +146,7 @@ function LoadoutServer.Store(src)
 end
 
 local function deliver(src, item)
-    if item.type == 'item' then
-        if not Bridge.CanCarry(src, item.item, item.count or 1) then return false, 'Not enough inventory space.' end
-        return Bridge.AddItem(src, item.item, item.count or 1, item.metadata), 'Inventory delivery failed.'
-    elseif item.type == 'money' then
+    if item.type == 'money' then
         return Bridge.AddMoney(src, item.account or 'cash', item.amount), 'Money delivery failed.'
     elseif item.type == 'event' and type(item.event) == 'string' then
         TriggerEvent(item.event, src, table.unpack(item.args or {})); return true

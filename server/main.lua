@@ -72,50 +72,6 @@ local function rankLabel(rating)
     return 'Unranked'
 end
 
--- Inventory is restored on logout/login as well as normal match cleanup.
-local function restoreInventory(src)
-    local identifier = Bridge.GetIdentifier(src)
-    if not identifier then return false end
-    local row = MySQL.single.await('SELECT items FROM fx_hopouts_inv WHERE identifier = ?', { identifier })
-    if not row then return true end
-    local ok, snapshot = pcall(json.decode, row.items)
-    if not ok or type(snapshot) ~= 'table' then
-        print(('[FearX-Hopouts] ^1Invalid inventory backup for %s; row retained.^0'):format(identifier))
-        return false
-    end
-    if not Bridge.RestoreInventory(src, snapshot) then
-        Bridge.Notify(src, 'Hopouts', 'Your saved inventory could not be restored yet. Reconnect or contact staff; the backup was retained.', 'error')
-        return false
-    end
-    MySQL.update.await('DELETE FROM fx_hopouts_inv WHERE identifier = ?', { identifier })
-    debug('Restored inventory for ' .. identifier)
-    return true
-end
-
-local function stashInventory(src, identifier)
-    if not Config.Match.clearInventory then return true end
-    -- Never overwrite an older backup: it may be the only copy after a crash.
-    local existing = MySQL.single.await('SELECT identifier FROM fx_hopouts_inv WHERE identifier = ?', { identifier })
-    if existing and not restoreInventory(src) then return false, 'Your previous inventory backup must be restored first.' end
-    local snapshot, reason = Bridge.SnapshotInventory(src)
-    if not snapshot then return false, reason end
-    MySQL.update.await('INSERT INTO fx_hopouts_inv (identifier, items, created) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE items = VALUES(items), created = VALUES(created)', {
-        identifier, json.encode(snapshot), os.time()
-    })
-    if not Bridge.ClearInventory(src) then
-        MySQL.update.await('DELETE FROM fx_hopouts_inv WHERE identifier = ?', { identifier })
-        return false, 'The inventory could not be cleared.'
-    end
-    return true
-end
-
-Bridge.OnPlayerLoaded(function(src)
-    CreateThread(function()
-        Wait(2500)
-        if online(src) then restoreInventory(src) end
-    end)
-end)
-
 -- ── Friends ──────────────────────────────────────────────────────────────
 local function friendData(src)
     if not Config.Friends then return { friends = {}, incoming = {}, outgoing = {} } end
@@ -297,7 +253,6 @@ local function cancelMatch(match, reason)
     for src in pairs(match.players) do
         if online(src) then
             SetPlayerRoutingBucket(src, 0)
-            restoreInventory(src)
             if sessions[src] then sessions[src].status = 'world'; sessions[src].match = nil end
             TriggerClientEvent('fx_hopouts:serverCancelled', src, reason)
         end
@@ -319,8 +274,6 @@ function Hopouts.CreateMatch(partyA, partyB)
         for slot, src in ipairs(party.members) do
             if not online(src) or not Bridge.IsLoaded(src) then cancelMatch(match, 'A player disconnected before the match started.'); return end
             local identifier = Bridge.GetIdentifier(src)
-            local ok, reason = stashInventory(src, identifier)
-            if not ok then cancelMatch(match, reason or 'Inventory backup failed. Match cancelled safely.'); return end
             local stats = Hopouts.GetStats(src)
             match.players[src] = {
                 source = src, identifier = identifier, team = team, slot = slot,
@@ -340,6 +293,9 @@ function Hopouts.CreateMatch(partyA, partyB)
             id = id, map = match.map.name, opponent = table.concat(names, ', '), team = entry.team, slot = entry.slot
         })
     end
+    -- Seed the in-match squad HUD immediately; don't wait for the first health
+    -- report from each client before teammates can see one another.
+    SquadServer.SyncMatch(match)
     debug(('Match %d started: %dv%d on %s'):format(id, #partyA.members, #partyB.members, match.map.id))
     SetTimeout(1000, function() if matches[id] then beginRound(match) end end)
 end
@@ -474,7 +430,6 @@ finishMatch = function(match, winner, forfeiter)
     SetTimeout(Config.EndScreenMs, function()
         for src in pairs(match.players) do
             if online(src) then
-                restoreInventory(src)
                 RadioServer.Leave(src)
                 SetPlayerRoutingBucket(src, 0)
                 if sessions[src] then sessions[src].status = 'world'; sessions[src].match = nil end
@@ -785,7 +740,6 @@ AddEventHandler('onResourceStop', function(resource)
         for src in pairs(match.players) do
             if online(src) then
                 SetPlayerRoutingBucket(src, 0)
-                restoreInventory(src)
                 RadioServer.Leave(src)
             end
         end
@@ -795,5 +749,4 @@ end)
 CreateThread(function()
     Wait(1000)
     print('^2[FearX-Hopouts]^0 QBCore-only open-source build ready. ox_lib + oxmysql loaded.')
-    if not Config.Match.clearInventory then print('^3[FearX-Hopouts]^0 Inventory clearing is disabled; native match weapons are still enforced.') end
 end)
